@@ -3,7 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <title>TaskPro – Менеджер задач</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+  <!-- Включаем «режим веб-приложения» для iOS -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <!-- Стиль строки состояния (можно заменить на «black», «black-translucent» или «default») -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <!-- Значок приложения (можно поставить свою иконку) -->
+  <!-- <link rel="apple-touch-icon" href="icon.png"> -->
+
   <style>
     /* Сброс отступов по умолчанию */
     * {
@@ -26,6 +35,8 @@
       color: #fff;
       text-align: center;
       padding: 20px 10px;
+      /* Сделаем небольшой отступ сверху для «чёлки» iPhone */
+      padding-top: calc(20px + env(safe-area-inset-top));
     }
 
     header h1 {
@@ -46,6 +57,7 @@
       border-radius: 8px;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
       flex: 1;
+      width: 90%;
     }
 
     /* Форма добавления задач */
@@ -209,6 +221,7 @@
 
   <footer>
     <p>&copy; 2025 TaskPro – Все права защищены.</p>
+    <p>Создатель: Evgeniy Kolokolov (EKstudio369)</p>
   </footer>
 
   <script>
@@ -250,9 +263,6 @@
     function addTaskToDOM(task) {
       const li = document.createElement('li');
       li.className = 'task-item';
-      if (task.completed) {
-        li.classList.add('done');
-      }
 
       // Определяем CSS-класс для приоритета
       let priorityClass = '';
@@ -371,7 +381,6 @@
       // Удаляем из DOM
       listItem.remove();
     }
-
   </script>
 </body>
 </html>
