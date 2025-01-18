@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>TaskPro – Менеджер задач</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* Сброс отступов по умолчанию */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(160deg, #e0f7fa, #e1f5fe);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      color: #333;
+    }
+
+    header {
+      background: #0277bd;
+      color: #fff;
+      text-align: center;
+      padding: 20px 10px;
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      margin-bottom: 5px;
+    }
+
+    header p {
+      font-size: 0.95rem;
+      opacity: 0.8;
+    }
+
+    main {
+      max-width: 600px;
+      margin: 20px auto;
+      background-color: #fff;
+      padding: 20px 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      flex: 1;
+    }
+
+    /* Форма добавления задач */
+    .task-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .task-form label {
+      font-weight: bold;
+    }
+
+    .task-form input,
+    .task-form select {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 1rem;
+    }
+
+    .task-form button {
+      align-self: flex-start;
+      background: #0277bd;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    .task-form button:hover {
+      background: #015384;
+    }
+
+    /* Список задач */
+    .task-list {
+      list-style: none;
+    }
+
+    .task-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 10px;
+      margin-bottom: 10px;
+      transition: background 0.3s;
+    }
+
+    .task-item:hover {
+      background: #fafafa;
+    }
+
+    .task-info {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      max-width: 70%;
+    }
+
+    .task-title {
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+
+    .task-meta {
+      font-size: 0.85rem;
+      color: #555;
+    }
+
+    .done {
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+
+    .priority-high {
+      color: #b71c1c; /* Красный */
+      font-weight: bold;
+    }
+
+    .priority-medium {
+      color: #ff6f00; /* Оранжевый */
+      font-weight: bold;
+    }
+
+    .priority-low {
+      color: #388e3c; /* Зелёный */
+      font-weight: bold;
+    }
+
+    .task-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .task-actions button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      border-radius: 5px;
+      padding: 5px 10px;
+      transition: background 0.3s;
+    }
+
+    .complete-btn:hover {
+      background: #dcedc8;
+    }
+
+    .delete-btn:hover {
+      background: #ffcdd2;
+    }
+
+    footer {
+      background: #ccc;
+      text-align: center;
+      padding: 10px;
+    }
+
+    footer p {
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>TaskPro</h1>
+    <p>Удобный офлайн-менеджер задач</p>
+  </header>
+
+  <main>
+    <!-- Форма для добавления новых задач -->
+    <form class="task-form" id="taskForm">
+      <div>
+        <label for="title">Название задачи:</label>
+        <input type="text" id="title" placeholder="Например: Выучить React" required>
+      </div>
+      <div>
+        <label for="priority">Приоритет:</label>
+        <select id="priority" required>
+          <option value="high">Высокий</option>
+          <option value="medium" selected>Средний</option>
+          <option value="low">Низкий</option>
+        </select>
+      </div>
+      <div>
+        <label for="deadline">Дедлайн (необязательно):</label>
+        <input type="date" id="deadline">
+      </div>
+      <button type="submit">Добавить задачу</button>
+    </form>
+
+    <!-- Список задач -->
+    <ul class="task-list" id="taskList"></ul>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 TaskPro – Все права защищены.</p>
+  </footer>
+
+  <script>
+    // --- Основной скрипт приложения ---
+
+    const taskForm = document.getElementById('taskForm');
+    const taskList = document.getElementById('taskList');
+
+    // При загрузке страницы восстанавливаем задачи из localStorage
+    document.addEventListener('DOMContentLoaded', loadTasksFromStorage);
+
+    // Обработка отправки формы: создаём новую задачу и добавляем в список
+    taskForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const title = document.getElementById('title').value.trim();
+      const priority = document.getElementById('priority').value;
+      const deadline = document.getElementById('deadline').value;
+
+      // Создаём объект задачи
+      const newTask = {
+        id: Date.now(),    // Уникальный идентификатор (время)
+        title: title,
+        priority: priority,
+        deadline: deadline,
+        completed: false
+      };
+
+      // Добавляем задачу в DOM
+      addTaskToDOM(newTask);
+      // Сохраняем в localStorage
+      saveTaskToStorage(newTask);
+
+      // Сброс формы
+      taskForm.reset();
+    });
+
+    // Функция для добавления задачи в DOM
+    function addTaskToDOM(task) {
+      const li = document.createElement('li');
+      li.className = 'task-item';
+      if (task.completed) {
+        li.classList.add('done');
+      }
+
+      // Определяем CSS-класс для приоритета
+      let priorityClass = '';
+      switch (task.priority) {
+        case 'high':    priorityClass = 'priority-high'; break;
+        case 'medium':  priorityClass = 'priority-medium'; break;
+        case 'low':     priorityClass = 'priority-low'; break;
+      }
+
+      // Блок с информацией о задаче
+      const infoDiv = document.createElement('div');
+      infoDiv.className = 'task-info';
+
+      const titleEl = document.createElement('span');
+      titleEl.className = 'task-title';
+      titleEl.textContent = task.title;
+
+      // Приоритет
+      const priorityEl = document.createElement('span');
+      priorityEl.className = `task-meta ${priorityClass}`;
+      if (task.priority === 'high') priorityEl.textContent = 'Приоритет: высокий';
+      else if (task.priority === 'medium') priorityEl.textContent = 'Приоритет: средний';
+      else priorityEl.textContent = 'Приоритет: низкий';
+
+      // Дедлайн (если указан)
+      const deadlineEl = document.createElement('span');
+      deadlineEl.className = 'task-meta';
+      if (task.deadline) {
+        deadlineEl.textContent = `Дедлайн: ${task.deadline}`;
+      } else {
+        deadlineEl.textContent = 'Без дедлайна';
+      }
+
+      infoDiv.appendChild(titleEl);
+      infoDiv.appendChild(priorityEl);
+      infoDiv.appendChild(deadlineEl);
+
+      // Кнопки действий
+      const actionsDiv = document.createElement('div');
+      actionsDiv.className = 'task-actions';
+
+      // Кнопка "Завершить/Возобновить"
+      const completeBtn = document.createElement('button');
+      completeBtn.className = 'complete-btn';
+      completeBtn.innerHTML = task.completed ? 'Возобновить' : 'Завершить';
+
+      completeBtn.addEventListener('click', () => {
+        task.completed = !task.completed;
+        updateTaskStatus(task);
+      });
+
+      // Кнопка "Удалить"
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'delete-btn';
+      deleteBtn.innerHTML = 'Удалить';
+      deleteBtn.addEventListener('click', () => {
+        deleteTask(task.id, li);
+      });
+
+      actionsDiv.appendChild(completeBtn);
+      actionsDiv.appendChild(deleteBtn);
+
+      li.appendChild(infoDiv);
+      li.appendChild(actionsDiv);
+      li.setAttribute('data-id', task.id);
+
+      // Если задача завершена, добавляем особые стили
+      if (task.completed) {
+        titleEl.classList.add('done');
+      }
+
+      taskList.appendChild(li);
+    }
+
+    // Сохраняем новую задачу в localStorage
+    function saveTaskToStorage(task) {
+      let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+      tasks.push(task);
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
+
+    // Загрузка задач из localStorage при старте
+    function loadTasksFromStorage() {
+      let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+      tasks.forEach(task => {
+        addTaskToDOM(task);
+      });
+    }
+
+    // Обновляем статус задачи (completed / not completed)
+    function updateTaskStatus(task) {
+      let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+      // Ищем нужную задачу по id и обновляем
+      tasks = tasks.map(t => t.id === task.id ? {...t, completed: task.completed} : t);
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+
+      // Обновляем DOM
+      const li = document.querySelector(`[data-id="${task.id}"]`);
+      const titleEl = li.querySelector('.task-title');
+      const completeBtn = li.querySelector('.complete-btn');
+
+      if (task.completed) {
+        titleEl.classList.add('done');
+        completeBtn.textContent = 'Возобновить';
+      } else {
+        titleEl.classList.remove('done');
+        completeBtn.textContent = 'Завершить';
+      }
+    }
+
+    // Удаляем задачу
+    function deleteTask(id, listItem) {
+      let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+      tasks = tasks.filter(t => t.id !== id);
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+      // Удаляем из DOM
+      listItem.remove();
+    }
+
+  </script>
+</body>
+</html>
